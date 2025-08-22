@@ -1,0 +1,181 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Expensely{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- THEME (we'll switch this via JS) -->
+  <link id="theme-css" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/lux/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Your CSS -->
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  <style>
+    /* Prevent font shrinking in dark mode */
+    body, h1, h2, h3, h4, h5, h6, p, small {
+      font-size: inherit !important;
+      line-height: 1.5;
+    }
+
+    h1.page-title, .page-title {
+      font-size: 1.75rem !important;
+      font-weight: 600;
+    }
+
+    /* Better toggle button styling */
+    #theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+
+    #theme-toggle i {
+      font-size: 1rem;
+    }
+
+    /* ✅ Dark mode footer (merged) */
+    body[data-theme="dark"] footer {
+      background: var(--bs-body-bg);
+      color: var(--bs-secondary-color);
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    /* Make navbar “pill” buttons consistent */
+    .btn-pill {
+        border-radius: 999px;
+        padding: .4rem .9rem;
+        font-size: .85rem;
+    }
+
+    /* Make the theme toggle look like a proper pill button */
+    #theme-toggle.btn {
+        border-width: 1px;
+    }
+  </style>
+</head>
+
+<body data-theme="light" class="d-flex flex-column min-vh-100">
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'home' %}">
+        <i class="bi bi-wallet2"></i> <span>Expensely</span>
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topnav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div id="topnav" class="collapse navbar-collapse">
+        <ul class="navbar-nav me-auto">
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}"><i class="bi bi-person"></i> Profile</a></li>
+          {% endif %}
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'category_list' %}"><i class="bi bi-tags"></i> Categories</a></li>
+          {% endif %}
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'transaction_list' %}"><i class="bi bi-receipt"></i> Transactions</a></li>
+          {% endif %}
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'budget_list' %}"><i class="bi bi-cash-coin"></i> Budgets</a></li>
+          {% endif %}
+        </ul>
+
+        <!-- ✅ THEME TOGGLE -->
+        <button id="theme-toggle" class="btn btn-outline-light btn-sm btn-pill me-2" type="button">
+          <i class="bi bi-moon"></i> <span class="d-none d-sm-inline">Dark</span>
+        </button>
+
+        <div class="d-flex gap-2">
+          {% if user.is_authenticated %}
+            <form action="{% url 'logout' %}" method="post" class="d-inline">
+              {% csrf_token %}
+              <button class="btn btn-outline-light btn-sm btn-rounded"><i class="bi bi-box-arrow-right"></i> Logout</button>
+            </form>
+          {% else %}
+            <a class="btn btn-outline-light btn-sm btn-rounded" href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+            <a class="btn btn-warning btn-sm btn-rounded" href="{% url 'signup' %}"><i class="bi bi-person-plus"></i> Sign up</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <header class="py-4">
+    <div class="container">
+      {% block header %}{% endblock %}
+    </div>
+  </header>
+
+  <!-- main grows to push footer -->
+  <main class="container pb-5 flex-grow-1">
+    {% if messages %}
+      <div class="mb-3">
+        {% for m in messages %}
+          <div class="alert alert-{{ m.tags|default:'info' }} shadow-sm">{{ m }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- sticky footer -->
+  <footer class="py-4 bg-body text-body-secondary border-top mt-auto">
+    <div class="container d-flex justify-content-between align-items-center">
+      <span>&copy; {{ now|date:"Y" }} Expensely</span>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- THEME SWITCHER SCRIPT -->
+  <script>
+  (function () {
+    const THEME_KEY = "expensely_theme";
+    const themeLink = document.getElementById("theme-css");
+    const toggleBtn = document.getElementById("theme-toggle");
+    const DARK = {
+      name: "dark",
+      href: "https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/darkly/bootstrap.min.css",
+      icon: "bi-sun",
+      label: "Light"
+    };
+    const LIGHT = {
+      name: "light",
+      href: "https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/lux/bootstrap.min.css",
+      icon: "bi-moon",
+      label: "Dark"
+    };
+
+    function apply(theme) {
+      themeLink.setAttribute("href", theme.href);
+      document.body.dataset.theme = theme.name;
+      toggleBtn.innerHTML = `<i class="bi ${theme.icon}"></i> <span class="d-none d-sm-inline">${theme.label}</span>`;
+      try { localStorage.setItem(THEME_KEY, theme.name); } catch(e) {}
+    }
+
+    // initial
+    let saved = null;
+    try { saved = localStorage.getItem(THEME_KEY); } catch(e) {}
+    apply(saved === "dark" ? DARK : LIGHT);
+
+    // toggle
+    toggleBtn.addEventListener("click", () => {
+      const current = document.body.dataset.theme === "dark" ? DARK : LIGHT;
+      apply(current.name === "dark" ? LIGHT : DARK);
+    });
+  })();
+  </script>
+</body>
+</html>

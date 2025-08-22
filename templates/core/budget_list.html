@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Budgets • Expensely{% endblock %}
+
+{% block header %}
+  <h1 class="page-title">Budgets</h1>
+  <p class="text-muted mb-0">Set monthly limits per category.</p>
+{% endblock %}
+
+{% block content %}
+<div class="card card-soft p-3 mb-3">
+  <form class="row g-2" method="get">
+    <div class="col-md-3">
+      <input class="form-control" type="number" name="year" value="{{ request.GET.year }}" placeholder="Year (e.g., 2025)">
+    </div>
+    <div class="col-md-3">
+      <input class="form-control" type="number" name="month" value="{{ request.GET.month }}" placeholder="Month (1-12)" min="1" max="12">
+    </div>
+    <div class="col-md-3"><button class="btn btn-dark w-100">Filter</button></div>
+    <div class="col-md-3"><a class="btn btn-warning w-100" href="{% url 'budget_create' %}"><i class="bi bi-plus"></i> New Budget</a></div>
+  </form>
+</div>
+
+<div class="card card-soft p-0">
+  <table class="table mb-0 align-middle">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Year</th>
+        <th>Month</th>
+        <th class="text-end">Limit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in budgets %}
+      <tr>
+        <td>{{ b.category.name }} <span class="badge bg-light text-dark text-capitalize">{{ b.category.type }}</span></td>
+        <td>{{ b.year }}</td>
+        <td>{{ b.month }}</td>
+        <td class="text-end">{{ b.limit }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="text-center text-muted py-4">No budgets yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

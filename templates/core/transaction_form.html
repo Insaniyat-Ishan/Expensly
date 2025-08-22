@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}New Transaction • Expensely{% endblock %}
+{% block header %}<h1 class="page-title">New Transaction</h1>{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card card-soft p-4">
+
+      <!-- ✅ New form with enctype added -->
+      <form method="post" enctype="multipart/form-data">  <!-- 👈 add enctype -->
+        {% csrf_token %}
+        {{ form|crispy }}
+
+        {% if form.instance.pk and form.instance.receipt %}
+          <div class="mb-3">
+            <label class="form-label">Current receipt</label><br>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ form.instance.receipt.url }}" target="_blank">
+              View receipt
+            </a>
+          </div>
+        {% endif %}
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-warning">Save</button>
+          <a class="btn btn-outline-dark" href="{% url 'transaction_list' %}">Cancel</a>
+        </div>
+      </form>
+      <!-- ✅ End new form -->
+
+      <!-- 🔹 Your old form (untouched) -->
+      <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div class="d-flex gap-2">
+          <button class="btn btn-warning">Save</button>
+          <a class="btn btn-outline-dark" href="{% url 'transaction_list' %}">Cancel</a>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

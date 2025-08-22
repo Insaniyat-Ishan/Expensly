@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Logged out • Expensely{% endblock %}
+{% block header %}<h1 class="page-title">Logged out</h1>{% endblock %}
+{% block content %}
+<div class="card card-soft p-4">
+  <a class="btn btn-dark btn-rounded" href="{% url 'login' %}">Log in again</a>
+  <a class="btn btn-outline-dark btn-rounded ms-2" href="{% url 'home' %}">Go home</a>
+</div>
+{% endblock %}

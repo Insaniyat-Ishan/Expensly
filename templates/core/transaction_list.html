@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Transactions • Expensely{% endblock %}
+{% block header %}
+  <h1 class="page-title">Transactions</h1>
+  <p class="text-muted mb-0">Track your income & expenses.</p>
+{% endblock %}
+{% block content %}
+
+<div class="row g-3 mb-3">
+  {% if budget_progress %}
+  <div class="col-12">
+    <div class="card card-soft p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h6 mb-0">Budgets — {{ budget_year }}-{{ budget_month|stringformat:"02d" }}</h2>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'budget_list' %}">Manage budgets</a>
+      </div>
+
+      <div class="vstack gap-3">
+        {% for row in budget_progress %}
+        <div>
+          <div class="d-flex justify-content-between">
+            <strong>{{ row.category }}</strong>
+            <small>
+              {{ row.spent }} / {{ row.limit }}
+              {% if row.over %}
+                <span class="badge bg-danger ms-2">Over</span>
+              {% endif %}
+            </small>
+          </div>
+          <div class="progress" role="progressbar" aria-valuenow="{{ row.pct }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar {% if row.over %}bg-danger{% else %}bg-success{% endif %}" style="width: {{ row.pct }}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-md-8">
+    <div class="card card-soft p-3">
+      <form class="row g-2" method="get">
+        <div class="col-md-3">
+          <input class="form-control" type="text" name="q" value="{{ request.GET.q }}" placeholder="Search note/category">
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" name="type">
+            <option value="">All</option>
+            <option value="income" {% if request.GET.type == 'income' %}selected{% endif %}>Income</option>
+            <option value="expense" {% if request.GET.type == 'expense' %}selected{% endif %}>Expense</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" name="category">
+            <option value="">All categories</option>
+            {% for c in categories %}
+              <option value="{{ c.name }}" {% if request.GET.category == c.name %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2"><input class="form-control" type="date" name="from" value="{{ request.GET.from }}"></div>
+        <div class="col-md-2"><input class="form-control" type="date" name="to" value="{{ request.GET.to }}"></div>
+        <div class="col-md-12">
+          <button class="btn btn-dark btn-sm">Filter</button>
+          <a class="btn btn-outline-secondary btn-sm ms-2" href="{% url 'transaction_list' %}">Clear</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card card-soft p-3">
+      <div class="d-flex justify-content-between"><span>Total Income</span><strong>{{ total_income }}</strong></div>
+      <div class="d-flex justify-content-between"><span>Total Expense</span><strong>{{ total_expense }}</strong></div>
+      <hr class="my-2">
+      <div class="d-flex justify-content-between">
+        <span>Balance</span>
+        <strong class="{% if balance < 0 %}text-danger{% endif %}">{{ balance }}</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex justify-content-end mb-2">
+  <a class="btn btn-warning" href="{% url 'transaction_create' %}"><i class="bi bi-plus"></i> New Transaction</a>
+</div>
+
+<div class="card card-soft p-0">
+  <table class="table mb-0 align-middle">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Note</th>
+        <th class="text-end">Amount</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in transactions %}
+      <tr>
+        <td>{{ t.date }}</td>
+        <td>{{ t.category.name }} <span class="badge bg-light text-dark text-capitalize">{{ t.category.type }}</span></td>
+        <td>{{ t.note|default:"—" }}</td>
+        <td class="text-end">{{ t.amount }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'transaction_update' t.pk %}">Edit</a>
+          <a class="btn btn-sm btn-outline-danger" href="{% url 'transaction_delete' t.pk %}">Delete</a>
+        </td>
+        <td>
+            {{ t.note|default:"—" }}
+            {% if t.receipt %}
+                <a class="ms-2" href="{{ t.receipt.url }}" target="_blank" title="View receipt">
+                    <i class="bi bi-paperclip"></i>
+                </a>
+            {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center text-muted py-4">No transactions yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="mt-3">
+  {% if is_paginated %}
+    <nav>
+      <ul class="pagination">
+        {% if page_obj.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+</div>
+
+{% endblock %}

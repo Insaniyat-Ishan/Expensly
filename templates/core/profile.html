@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Profile • Expensely{% endblock %}
+
+{% block header %}
+  <h1 class="page-title">Hello, {{ request.user.username|default:"there" }} 👋</h1>
+  <p class="text-body-secondary mb-0">Your profile overview</p>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <!-- Account -->
+  <div class="col-lg-4">
+    <div class="card card-soft p-3">
+      <h2 class="h6 text-uppercase text-body-secondary mb-3">Account</h2>
+      <p class="mb-2"><i class="bi bi-envelope"></i> {{ request.user.email|default:"(no email set)" }}</p>
+      <p class="mb-0"><i class="bi bi-clock"></i> Joined: {{ request.user.date_joined|date:"M d, Y" }}</p>
+    </div>
+  </div>
+
+  <!-- This month -->
+  <div class="col-lg-4">
+    <div class="card card-soft p-3">
+      <h2 class="h6 text-uppercase text-body-secondary mb-3">This Month ({{ year }}-{{ month|stringformat:"02d" }})</h2>
+      <div class="d-flex justify-content-between"><span>Total Income</span><strong>{{ month_income }}</strong></div>
+      <div class="d-flex justify-content-between"><span>Total Expense</span><strong>{{ month_expense }}</strong></div>
+      <hr class="my-2">
+      <div class="d-flex justify-content-between"><span>Balance</span>
+        <strong class="{% if month_balance < 0 %}text-danger{% endif %}">{{ month_balance }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="col-lg-4">
+    <div class="card card-soft p-3">
+      <h2 class="h6 text-uppercase text-body-secondary mb-3">Your Data</h2>
+      <div class="d-flex justify-content-between"><span>Categories</span><strong>{{ category_count }}</strong></div>
+      <div class="d-flex justify-content-between"><span>Transactions</span><strong>{{ txn_count }}</strong></div>
+      <div class="mt-3 d-grid gap-2">
+        <a class="btn btn-warning btn-sm" href="{% url 'transaction_create' %}"><i class="bi bi-plus"></i> New Transaction</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'category_list' %}">Manage Categories</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent activity -->
+<div class="card card-soft p-0 mt-3">
+  <div class="p-3 border-bottom"><strong>Recent transactions</strong></div>
+  <table class="table mb-0 align-middle">
+    <thead><tr><th>Date</th><th>Category</th><th>Note</th><th class="text-end">Amount</th></tr></thead>
+    <tbody>
+      {% for t in recent %}
+      <tr>
+        <td>{{ t.date }}</td>
+        <td>{{ t.category.name }} <span class="badge bg-light text-dark text-capitalize">{{ t.category.type }}</span></td>
+        <td>{{ t.note|default:"—" }}</td>
+        <td class="text-end">{{ t.amount }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="text-center text-body-secondary py-4">No transactions yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

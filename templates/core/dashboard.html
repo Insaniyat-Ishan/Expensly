@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Dashboard • Expensely{% endblock %}
+
+{% block header %}
+  <h1 class="page-title">Dashboard</h1>
+  <p class="text-muted mb-0">Current month by category • Last 12 months trend</p>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-md-5">
+    <div class="card card-soft p-3">
+      <h2 class="h6 mb-3">Category breakdown (current month)</h2>
+      <canvas id="pieChart" style="max-height:340px;"></canvas>
+      <small class="text-muted d-block mt-2">Only expense categories are shown here.</small>
+      <div id="pieEmpty" class="text-muted small mt-2 d-none">No expense data for this month.</div>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="card card-soft p-3">
+      <h2 class="h6 mb-3">Income vs Expense (last 12 months)</h2>
+      <canvas id="lineChart" style="max-height:340px;"></canvas>
+      <div id="lineEmpty" class="text-muted small mt-2 d-none">No data in the last 12 months.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Budgets (current month) -->
+<div class="row g-3 mt-3">
+  <div class="col-12">
+    <div class="card card-soft p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h6 mb-0">Budgets — <span id="bym"></span></h2>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'budget_list' %}">Manage budgets</a>
+      </div>
+      <div id="budgetList" class="vstack gap-3"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(async function () {
+  // ----- Fetch summary data for charts -----
+  const res = await fetch("{% url 'summary_api' %}");
+  const data = await res.json();
+
+  // ----- Pie (current month, expenses only) -----
+  const expenseRows = data.categories.filter(r => r.type === "expense");
+  const pieLabels = expenseRows.map(r => r.name);
+  const pieData = expenseRows.map(r => r.total);
+
+  const pieEmpty = document.getElementById("pieEmpty");
+  const pieCtx = document.getElementById("pieChart");
+  if (pieData.length > 0 && pieData.some(v => v > 0)) {
+    new Chart(pieCtx, {
+      type: "pie",
+      data: { labels: pieLabels, datasets: [{ data: pieData }] },
+      options: { plugins: { legend: { position: "bottom" } } }
+    });
+  } else {
+    pieEmpty.classList.remove("d-none");
+  }
+
+  // ----- Line (12 months, income vs expense) -----
+  const monthsSet = new Set(data.monthly.map(r => r.month));
+  const months = Array.from(monthsSet).sort(); // "YYYY-MM"
+
+  function seriesFor(type) {
+    const map = new Map(data.monthly.filter(r => r.type === type).map(r => [r.month, r.total]));
+    return months.map(m => map.get(m) || 0);
+  }
+
+  const incomeSeries = seriesFor("income");
+  const expenseSeries = seriesFor("expense");
+
+  const lineEmpty = document.getElementById("lineEmpty");
+  const lineCtx = document.getElementById("lineChart");
+  if (months.length && (incomeSeries.some(v => v > 0) || expenseSeries.some(v => v > 0))) {
+    new Chart(lineCtx, {
+      type: "line",
+      data: {
+        labels: months,
+        datasets: [
+          { label: "Income", data: incomeSeries },
+          { label: "Expense", data: expenseSeries }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom" } },
+        scales: {
+          x: { ticks: { autoSkip: true, maxTicksLimit: 12 } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  } else {
+    lineEmpty.classList.remove("d-none");
+  }
+
+  // ----- Budget progress (current month) -----
+  const breq = await fetch("{% url 'budget_summary_api' %}");
+  const bdata = await breq.json();
+  document.getElementById("bym").textContent =
+    `${bdata.year}-${String(bdata.month).padStart(2,'0')}`;
+
+  const host = document.getElementById("budgetList");
+  if (!bdata.items.length) {
+    host.innerHTML = `<div class="text-muted">No budgets set for this month.</div>`;
+    return;
+  }
+
+  for (const row of bdata.items) {
+    const overBadge = row.over ? `<span class="badge bg-danger ms-2">Over</span>` : "";
+    const barClass = row.over ? "bg-danger" : "bg-success";
+    const el = document.createElement("div");
+    el.innerHTML = `
+      <div class="d-flex justify-content-between">
+        <strong>${row.category}</strong>
+        <small>${row.spent} / ${row.limit} ${overBadge}</small>
+      </div>
+      <div class="progress" role="progressbar" aria-valuenow="${row.pct}" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar ${barClass}" style="width:${row.pct}%"></div>
+      </div>
+    `;
+    host.appendChild(el);
+  }
+})();
+</script>
+{% endblock %}

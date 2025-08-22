@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Delete Transaction • Expensely{% endblock %}
+{% block header %}<h1 class="page-title">Delete Transaction</h1>{% endblock %}
+{% block content %}
+<div class="card card-soft p-4">
+  <p>Are you sure you want to delete this transaction?</p>
+  <ul>
+    <li><strong>Date:</strong> {{ object.date }}</li>
+    <li><strong>Category:</strong> {{ object.category.name }} ({{ object.category.type }})</li>
+    <li><strong>Amount:</strong> {{ object.amount }}</li>
+    <li><strong>Note:</strong> {{ object.note|default:"—" }}</li>
+  </ul>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger">Yes, delete</button>
+    <a class="btn btn-outline-dark ms-2" href="{% url 'transaction_list' %}">Cancel</a>
+  </form>
+</div>
+{% endblock %}
